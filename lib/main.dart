@@ -1,20 +1,11 @@
 import 'dart:convert';
 
+import 'package:quran_rand_flutter/widget/ayah_widget.dart';
+
 import 'model/ayah.dart';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-Future<Ayah> fetchAyah() async {
-  final response =
-      await http.get(Uri.parse('https://quran-randomizer.herokuapp.com/'));
-
-  if (response.statusCode == 200) {
-    return Ayah.fromJson(jsonDecode(response.body));
-  } else {
-    throw Exception('Failed to load ayah');
-  }
-}
 
 void main() => runApp(const MyApp());
 
@@ -25,12 +16,21 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late Future<Ayah> futureAyah;
+  late Ayah ayah = const Ayah(
+      nameOfSurah: '', numberOfAyah: 0, arabText: '', idTranslation: '');
 
   @override
   void initState() {
     super.initState();
-    futureAyah = fetchAyah();
+  }
+
+  void fetchAyah() async {
+    var response =
+        await http.get(Uri.parse('https://quran-randomizer.herokuapp.com/'));
+    var ayahFetched = Ayah.fromJson(jsonDecode(response.body));
+    setState(() {
+      ayah = ayahFetched;
+    });
   }
 
   @override
@@ -39,25 +39,13 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         floatingActionButton: FloatingActionButton(
           child: const Icon(Icons.refresh_rounded),
-          onPressed: () => '',
+          onPressed: () => fetchAyah(),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         appBar: AppBar(
           title: const Text('Quran Randomizer'),
         ),
-        body: Center(
-          child: FutureBuilder<Ayah>(
-            future: futureAyah,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(snapshot.data!.arabText);
-              } else if (snapshot.hasError) {
-                return Text('${snapshot.hasError}');
-              }
-              return const CircularProgressIndicator();
-            },
-          ),
-        ),
+        body: AyahWidget(ayah),
       ),
     );
   }
